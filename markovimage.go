@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+// Alpha channel support
+// Default false saves some memory
+var ALPHA = false
+
 type markovImage struct {
 	lookup      int
 	orientation int
@@ -18,7 +22,10 @@ type markovImage struct {
 
 func colorToCString(col color.Color) string {
 	r, g, b, a := col.RGBA()
-	colorString := strconv.Itoa(int(r)) + strconv.Itoa(int(g)) + strconv.Itoa(int(b)) + strconv.Itoa(int(a))
+	colorString := strconv.Itoa(int(r)) + strconv.Itoa(int(g)) + strconv.Itoa(int(b))
+	if ALPHA {
+		colorString += strconv.Itoa(int(a))
+	}
 	return colorString
 }
 
