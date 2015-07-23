@@ -1,6 +1,6 @@
 # markov-art
 
-Markov chain image generator
+Markov chain glitch art generator
 
 ## Installation
 ```sh
