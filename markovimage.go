@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
-type colorMap map[string][]color.Color
+type markovImage struct {
+	lookup      int
+	orientation int
+	colorMap    map[string][]color.Color
+}
 
 func colorToCString(col color.Color) string {
 	r, g, b, a := col.RGBA()
@@ -18,15 +22,36 @@ func colorToCString(col color.Color) string {
 	return colorString
 }
 
-func createMarkovChain(img image.Image) colorMap {
-	chain := make(colorMap)
+func createMarkovChain(img image.Image, lookup int, orientation int) markovImage {
+	mi := new(markovImage)
+	(*mi).lookup = lookup
+	(*mi).orientation = orientation
+
+	chain := make(map[string][]color.Color)
+
 	width := img.Bounds().Max.X
 	height := img.Bounds().Max.Y
+	totalPixelCount := width * height
+	pixelCount := 0
 
-	previousColors := make([]string, LOOKUP)
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
-			newColor := img.At(x, y)
+	previousColors := make([]string, mi.lookup)
+
+	first := width
+	second := height
+
+	if mi.orientation == 1 {
+		first = height
+		second = width
+	}
+
+	for x := 0; x < first; x++ {
+		for y := 0; y < second; y++ {
+			var newColor color.Color
+			if orientation == 0 {
+				newColor = img.At(x, y)
+			} else {
+				newColor = img.At(y, x)
+			}
 
 			key := str.Join(previousColors, "|")
 
@@ -34,51 +59,56 @@ func createMarkovChain(img image.Image) colorMap {
 
 			previousColors = previousColors[1:]
 			previousColors = append(previousColors, colorToCString(newColor))
-
+			if pixelCount%1000 == 0 {
+				fmt.Printf("\rGenerating Markov Chain: %.0f%%", float32(pixelCount)/float32(totalPixelCount)*100)
+			}
+			pixelCount++
 		}
 	}
-
-	return chain
+	fmt.Printf("\n")
+	(*mi).colorMap = chain
+	return *mi
 }
 
-func (chain colorMap) generateImage(width int, height int) image.Image {
+func (mi markovImage) generateImage(width int, height int) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	rand.Seed(time.Now().UTC().UnixNano())
-	pixelCount := width * height
+	totalPixelCount := width * height
+	pixelCount := 0
 
-	previousColors := make([]string, LOOKUP)
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
+	previousColors := make([]string, mi.lookup)
+
+	first := width
+	second := height
+
+	if mi.orientation == 1 {
+		first = height
+		second = width
+	}
+
+	for x := 0; x < first; x++ {
+		for y := 0; y < second; y++ {
 			key := str.Join(previousColors, "|")
-			if len(chain[key]) == 0 {
-				fmt.Printf("\nNo next color found for key %v.\nResetting previous color information...\n", key)
-				previousColors = make([]string, LOOKUP)
+			if len(mi.colorMap[key]) == 0 {
+				fmt.Printf("\nNo color found for current key. Resetting past state information...\n")
+				previousColors = make([]string, mi.lookup)
 				continue
 			}
-			newColor := chain[key][rand.Intn(len(chain[key]))]
-			img.Set(x, y, newColor)
+			newColor := mi.colorMap[key][rand.Intn(len(mi.colorMap[key]))]
+
+			if mi.orientation == 0 {
+				img.Set(x, y, newColor)
+			} else {
+				img.Set(y, x, newColor)
+			}
 			previousColors = previousColors[1:]
 			previousColors = append(previousColors, colorToCString(newColor))
-			fmt.Printf("\r%.0f%% done", float32(x*y)/float32(pixelCount)*100)
+			if pixelCount%1000 == 0 {
+				fmt.Printf("\rGenerating Image: %.0f%%", float32(pixelCount)/float32(totalPixelCount)*100)
+			}
+			pixelCount++
 		}
 	}
 
 	return img
 }
-
-/*
-func (mi markovImage) generate() {
-	for x := 0; x < theImage.width; x++ {
-		for y := 0; y < theImage.height; y++ {
-			mi.dict[theImage.imagePoints[x][y].color]["above"] = theImage.imagePoints[x][y].getColorAbove()
-			mi.dict[theImage.imagePoints[x][y].color]["below"] = theImage.imagePoints[x][y].getColorBelow()
-			mi.dict[theImage.imagePoints[x][y].color]["right"] = theImage.imagePoints[x][y].getColorRight()
-			mi.dict[theImage.imagePoints[x][y].color]["left"] = theImage.imagePoints[x][y].getColorLeft()
-		}
-	}
-
-	fmt.Print(len(mi.dict))
-
-	theImage.dict = mi.dict
-}
-*/

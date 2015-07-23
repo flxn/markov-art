@@ -1,12 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	"image/png"
 	"os"
-	"strconv"
 )
 
 func handle(err error) {
@@ -15,24 +15,21 @@ func handle(err error) {
 	}
 }
 
-//Lookup value
-var LOOKUP = 2
-
 func main() {
-	if len(os.Args[1:]) < 2 {
+
+	lookupPtr := flag.Int("o", 1, "Markov chain of n-th order")
+
+	horizontalPtr := flag.Bool("horizontal", false, "Orientation horizontal (Default: vertical)")
+
+	flag.Parse()
+
+	if len(flag.Args()) < 2 {
 		fmt.Printf("Usage: %v inputPath outputPath\n", os.Args[0])
 		os.Exit(1)
 	}
 
-	inputPath := os.Args[1]
-	outFileName := os.Args[2]
-
-	if len(os.Args[1:]) == 3 {
-		lookupparam := os.Args[3]
-		l, err := strconv.Atoi(lookupparam)
-		handle(err)
-		LOOKUP = l
-	}
+	inputPath := flag.Arg(0)
+	outFileName := flag.Arg(1)
 
 	file, err := os.Open(inputPath)
 	handle(err)
@@ -47,7 +44,12 @@ func main() {
 	height := img.Bounds().Max.Y
 	fmt.Printf("Dimensions: %vx%v\n", width, height)
 
-	m := createMarkovChain(img)
+	orientation := 0
+	if *horizontalPtr {
+		orientation = 1
+	}
+
+	m := createMarkovChain(img, *lookupPtr, orientation)
 
 	markovImage := m.generateImage(width, height)
 
