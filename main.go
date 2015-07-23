@@ -15,16 +15,27 @@ func handle(err error) {
 	}
 }
 
+func printUsage() {
+	fmt.Printf("Usage: %v [flags] inputFile outputFile\n", os.Args[0])
+	fmt.Println("Flags:")
+	fmt.Println(" -o Markov chain of n-th order (Default: 1)")
+	fmt.Println(" -horizontal Horizontal line scanning (Default: Vertical if omitted)")
+	fmt.Println(" -h Print help")
+	fmt.Println("Arguments:")
+	fmt.Println(" inputFile Path to input image")
+	fmt.Println(" outputFile Path to output image (must be *.png)")
+}
+
 func main() {
+	flag.Usage = printUsage
 
 	lookupPtr := flag.Int("o", 1, "Markov chain of n-th order")
-
 	horizontalPtr := flag.Bool("horizontal", false, "Orientation horizontal (Default: vertical)")
 
 	flag.Parse()
 
 	if len(flag.Args()) < 2 {
-		fmt.Printf("Usage: %v inputPath outputPath\n", os.Args[0])
+		flag.Usage()
 		os.Exit(1)
 	}
 
