@@ -4,6 +4,11 @@ Markov chain glitch art generator
 
 ## Installation
 ```sh
+go get -u github.com/flxn/markov-art
+go build github.com/flxn/markov-art
+
+or
+
 git clone https://github.com/flxn/markov-art.git
 cd markov-art/
 go build
